@@ -1,6 +1,5 @@
 # randall-clock-desktop-background
-Change desktop background using the XKCD now clock
-Using the clock from https://xkcd.com/1335/
+Change desktop background using the XKCD now clock from https://xkcd.com/1335/
 
 Installation:
 
