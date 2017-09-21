@@ -5,10 +5,10 @@ Change desktop background using the XKCD now clock from https://xkcd.com/1335/
 
 
 1. install feh
-..* on debian systems: `apt install feh`
+on debian systems: `apt install feh`
 
 2. add a cron job like 
 `*/15 * * * * /path/to/timeupdate.bash`
-..* to edit cron jobs on a debian system, `crontab -e`
+to edit cron jobs on a debian system, `crontab -e`
 
-3. adjust to your timezone by modifying the "7 hours ago" parts on lines 3 and 4 of timeupdate.bash
+3. adjust to your timezone by modifying the "7 hours ago" in timeupdate.bash
