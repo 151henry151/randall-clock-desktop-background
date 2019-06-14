@@ -1,5 +1,6 @@
 #!/bin/bash
 export DISPLAY=:0
+# adjust "7 hours ago" to account for your time zone
 hour=$(date -d "7 hours ago" +%H)
 min=$(date -d "7 hours ago" +%M)
  
@@ -11,4 +12,5 @@ if [[ $min == 0 ]]; then
       min="00";
 fi
 
-feh --image-bg white --bg-center "/home/username/randall-clock-desktop-background/now/${hour}h${min}m.png"
+# replace "henry" with your username below
+feh --image-bg white --bg-center "/home/henry/randall-clock-desktop-background/now/${hour}h${min}m.png"
