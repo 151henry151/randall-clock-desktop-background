@@ -1,0 +1,21 @@
+# Virtual Environment
+venv/
+env/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Generated images
+src/images/intervals1m/blackGreenOverlayRedDot/
+src/images/intervals15m/blackGlobeGreenOverlayRedDot/
+src/images/intervals15m/xkcdOriginalRedDot/
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# IDE specific files
+.vscode/
+.idea/ 

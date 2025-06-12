@@ -1,16 +1,47 @@
 #!/bin/bash
-export DISPLAY=:0
-# adjust "04 hours ago" to account for your time zone
-hour=$(date -d "04 hours ago" +%H)
-min=$(date -d "04 hours ago" +%M)
- 
-if [[ ! $((${min}%15)) -eq 0 ]]; then
-      min=$((${min}-$((${min}%15))))
+
+# Read config.ini
+CONFIG="config.ini"
+STYLE=$(awk -F' *= *' '/^image_style *=/ {print $2}' "$CONFIG")
+INTERVAL=$(awk -F' *= *' '/^interval *=/ {print $2}' "$CONFIG")
+USE_REDDOT=0
+if grep -q "RedDot" "$CONFIG"; then
+    USE_REDDOT=$(awk -F' *= *' '/^RedDot *=/ {print $2}' "$CONFIG")
 fi
 
-if [[ $min == 0 ]]; then
-      min="00";
+# Determine image directory
+if [[ "$STYLE" == "black" && "$INTERVAL" == "1m" ]]; then
+    BASEDIR="src/images/intervals1m/blackGreenOverlay"
+    REDDIR="src/images/intervals1m/blackGreenOverlayRedDot"
+elif [[ "$STYLE" == "black" && "$INTERVAL" == "15m" ]]; then
+    BASEDIR="src/images/intervals15m/blackGlobeGreenOverlay"
+    REDDIR="src/images/intervals15m/blackGlobeGreenOverlayRedDot"
+elif [[ "$STYLE" == "xkcd" ]]; then
+    BASEDIR="src/images/intervals15m/xkcdOriginal"
+    REDDIR="src/images/intervals15m/xkcdOriginalRedDot"
 fi
 
-# replace "henry" with your username below
-feh --image-bg white --bg-center "/home/henry/randall-clock-desktop-background/now/${hour}h${min}m.png"
+if [[ "$USE_REDDOT" == "1" && -d "$REDDIR" ]]; then
+    IMGDIR="$REDDIR"
+else
+    IMGDIR="$BASEDIR"
+fi
+
+# Get current UTC time and apply 8-hour offset
+HOUR=$(date -u +%H)
+MIN=$(date -u +%M)
+
+# Subtract 8 hours, wrap around if negative
+HOUR=$(( (10#$HOUR - 8 + 24) % 24 ))
+
+# Round down to nearest interval
+if [[ "$INTERVAL" == "15m" ]]; then
+    MIN=$((MIN - MIN % 15))
+    printf -v MIN "%02d" $MIN
+fi
+
+IMGFILE=$(printf "%02dh%02dm.png" "$HOUR" "$MIN")
+IMG="$IMGDIR/$IMGFILE"
+
+# Set background
+feh --image-bg black --bg-max "$IMG" 
