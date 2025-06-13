@@ -4,13 +4,14 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 # Paths
-IMG_PATH = os.path.join('src', 'images', 'intervals15m', 'xkcdOriginal', '00h00m.png')
+IMG_PATH = os.path.join('src', 'images', 'base_globe.png')
 CONFIG_PATH = 'config.ini'
 
 # Load image
 img = mpimg.imread(IMG_PATH)
 
 print("Click on your approximate location in the image window.")
+print("This will be used to place the red dot on the globe.")
 
 fig, ax = plt.subplots()
 ax.imshow(img)
