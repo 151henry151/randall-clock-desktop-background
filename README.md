@@ -177,3 +177,6 @@ height = 960
 - Explanation: [explainxkcd.com/1335](https://explainxkcd.com/1335)
 - Black globe version and batch image processing: [Fred Weinhaus's ImageMagick scripts](http://www.fmwconcepts.com/imagemagick/index.php)
 - See `posterity.pdf` for the original email exchange with Fred Weinhaus.
+
+## Black Mode
+This mode displays a black background with a green overlay showing the current time. The clock is viewed from the south pole and uses a 24-hour dial. The time display is calibrated with a fixed offset to ensure correct time alignment regardless of installation time.

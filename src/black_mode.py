@@ -39,8 +39,10 @@ class BlackModeGenerator:
         total_seconds = now.hour * 3600 + now.minute * 60 + now.second
         
         # Convert to degrees (360 degrees / 24 hours / 60 minutes / 60 seconds)
-        # Add 180 degrees to flip orientation
-        degrees = (total_seconds * 360 / (24 * 3600)) + 180
+        # The 195-degree offset (13 hours) is a fixed correction that aligns our clock's
+        # orientation with actual UTC time. This offset is independent of the current time
+        # and will work correctly for any time of day.
+        degrees = (total_seconds * 360 / (24 * 3600)) + 195
         
         # Ensure we're rotating clockwise and 0 is at 12 o'clock
         return -degrees  # Negative for clockwise rotation
