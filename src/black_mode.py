@@ -1,0 +1,204 @@
+import os
+import math
+from PIL import Image, ImageDraw, ImageOps
+import numpy as np
+from datetime import datetime, timezone, timedelta
+import configparser
+
+class BlackModeGenerator:
+    def __init__(self, base_globe_path, overlay_path, temp_dir, use_red_dot=False):
+        self.base_globe_path = base_globe_path
+        self.overlay_path = overlay_path
+        self.temp_dir = temp_dir
+        self.use_red_dot = use_red_dot
+        
+        # Create temp directory if it doesn't exist
+        os.makedirs(temp_dir, exist_ok=True)
+        
+        # Load base images
+        self.globe = Image.open(base_globe_path).convert('RGBA')
+        self.overlay = Image.open(overlay_path).convert('RGBA')
+        
+        # Create a mask for the globe (assuming the globe is the non-transparent part)
+        globe_array = np.array(self.globe)
+        mask_array = (globe_array[..., 3] > 0).astype(np.uint8) * 255
+        self.globe_mask = Image.fromarray(mask_array, 'L')
+        
+        # Get globe center from config
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        self.globe_center_x = int(config['BLACK_GLOBE']['center_x'])
+        self.globe_center_y = int(config['BLACK_GLOBE']['center_y'])
+    
+    def calculate_rotation(self):
+        """Calculate the rotation angle based on current time."""
+        # Get current UTC time
+        now = datetime.now(timezone.utc)
+        
+        # Calculate total seconds since midnight UTC
+        total_seconds = now.hour * 3600 + now.minute * 60 + now.second
+        
+        # Convert to degrees (360 degrees / 24 hours / 60 minutes / 60 seconds)
+        # Add 180 degrees to flip orientation
+        degrees = (total_seconds * 360 / (24 * 3600)) + 180
+        
+        # Ensure we're rotating clockwise and 0 is at 12 o'clock
+        return -degrees  # Negative for clockwise rotation
+    
+    def generate_frame(self, hour, minute):
+        """Generate a frame for the specified time."""
+        # Calculate rotation angle
+        rotation = self.calculate_rotation()
+        
+        # Extract globe using mask
+        globe_only = Image.composite(self.globe, Image.new('RGBA', self.globe.size, (0,0,0,0)), self.globe_mask)
+        
+        # Create a transparent background for rotation
+        rotated_globe = Image.new('RGBA', self.globe.size, (0,0,0,0))
+        
+        # Rotate the globe with transparent background
+        rotated_globe.paste(
+            globe_only.rotate(rotation, resample=Image.BICUBIC, center=(self.globe.width//2, self.globe.height//2), expand=False),
+            (0, 0)
+        )
+        
+        # DEBUG: Save the rotated globe before compositing
+        debug_path = os.path.join(self.temp_dir, f"debug_rotated_globe_{hour:02d}h{minute:02d}m.png")
+        rotated_globe.save(debug_path)
+        
+        # Create a transparent background
+        final = Image.new('RGBA', self.overlay.size, (0,0,0,0))
+        
+        # Paste the rotated globe with a small vertical offset to move it down
+        vertical_offset = 10  # Adjust this value to move the globe up or down
+        final.paste(rotated_globe, (0, vertical_offset), rotated_globe)
+        
+        # Create a mask for the overlay (inverse of the globe mask)
+        overlay_mask = ImageOps.invert(self.globe_mask)
+        
+        # Apply the overlay using the mask
+        final.paste(self.overlay, (0, 0), overlay_mask)
+        
+        return final
+    
+    def generate_next_frame(self):
+        """Generate the next frame based on current time."""
+        # Get current local time
+        now = datetime.now()
+        
+        # Generate current frame
+        current_frame = self.generate_frame(now.hour, now.minute)
+        
+        # Generate next frame
+        next_time = now + timedelta(minutes=1)
+        next_frame = self.generate_frame(next_time.hour, next_time.minute)
+        
+        # Save frames
+        current_path = os.path.join(self.temp_dir, f"current_frame.png")
+        next_path = os.path.join(self.temp_dir, f"next_frame.png")
+        
+        current_frame.save(current_path)
+        next_frame.save(next_path)
+        
+        return current_path, next_path
+
+    def add_red_dot(self, x, y, rotation_degrees=0):
+        """Add a glowing red dot at the specified coordinates."""
+        # Create a new image with alpha channel for the dot
+        dot_img = Image.new('RGBA', self.globe.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(dot_img)
+        
+        # Define the glow layers (radius, alpha)
+        glow_layers = [
+            (20, 40),   # Outer glow
+            (15, 80),   # Middle glow
+            (10, 120),  # Inner glow
+            (5, 255)    # Core dot
+        ]
+        
+        # Draw each layer of the glow
+        for radius, alpha in glow_layers:
+            # Create a semi-transparent red color
+            color = (255, 0, 0, alpha)
+            # Draw the circle
+            draw.ellipse(
+                [x - radius, y - radius, x + radius, y + radius],
+                fill=color
+            )
+        
+        # Composite the dot onto the globe
+        self.globe = Image.alpha_composite(self.globe, dot_img)
+
+def create_base_globe_with_dot(base_globe_path, x, y, output_path):
+    """Create a base globe image with the red dot permanently placed at the specified coordinates."""
+    # Load the base globe
+    base_globe = Image.open(base_globe_path).convert('RGBA')
+    
+    # Create a new image with alpha channel for the dot
+    dot_img = Image.new('RGBA', base_globe.size, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(dot_img)
+    
+    # Define the glow layers (radius, alpha)
+    glow_layers = [
+        (20, 40),   # Outer glow
+        (15, 80),   # Middle glow
+        (10, 120),  # Inner glow
+        (5, 255)    # Core dot
+    ]
+    
+    # Draw each layer of the glow
+    for radius, alpha in glow_layers:
+        # Create a semi-transparent red color
+        color = (255, 0, 0, alpha)
+        # Draw the circle
+        draw.ellipse(
+            [x - radius, y - radius, x + radius, y + radius],
+            fill=color
+        )
+    
+    # Composite the dot onto the globe
+    base_globe = Image.alpha_composite(base_globe, dot_img)
+    
+    # Save the result
+    base_globe.save(output_path)
+    print(f"Created base globe with red dot at ({x}, {y})")
+
+def main():
+    """Main function to be called from the bash script."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Generate black mode clock frames')
+    parser.add_argument('--base-globe', required=True, help='Path to base globe image')
+    parser.add_argument('--overlay', required=True, help='Path to overlay image')
+    parser.add_argument('--temp-dir', required=True, help='Path to temporary directory')
+    parser.add_argument('--use-red-dot', action='store_true', help='Whether to use red dot')
+    parser.add_argument('--create-base', action='store_true', help='Create base globe with red dot')
+    parser.add_argument('--dot-x', type=int, help='X coordinate for red dot')
+    parser.add_argument('--dot-y', type=int, help='Y coordinate for red dot')
+    
+    args = parser.parse_args()
+    
+    if args.create_base:
+        if not args.dot_x or not args.dot_y:
+            print("Error: --dot-x and --dot-y are required when --create-base is used")
+            return
+        
+        # Create the base globe with red dot
+        base_with_dot = os.path.join(os.path.dirname(args.base_globe), 'base_globe_with_dot.png')
+        create_base_globe_with_dot(args.base_globe, args.dot_x, args.dot_y, base_with_dot)
+        print(f"Created base globe with red dot at: {base_with_dot}")
+        return
+    
+    generator = BlackModeGenerator(
+        args.base_globe,
+        args.overlay,
+        args.temp_dir,
+        args.use_red_dot
+    )
+    
+    current_path, next_path = generator.generate_next_frame()
+    print(f"Current frame: {current_path}")
+    print(f"Next frame: {next_path}")
+
+if __name__ == "__main__":
+    main() 
