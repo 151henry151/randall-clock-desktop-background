@@ -36,7 +36,9 @@ class BlackModeGenerator:
         
         # Get globe center from config
         config = configparser.ConfigParser()
-        config.read('config.ini')
+        config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config.ini')
+        logging.info(f"Reading config from: {config_path}")
+        config.read(config_path)
         self.globe_center_x = int(config['BLACK_GLOBE']['center_x'])
         self.globe_center_y = int(config['BLACK_GLOBE']['center_y'])
         

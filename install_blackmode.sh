@@ -5,15 +5,15 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
-# Function to check if a Python package is installed
+# Function to check if a Python package is installed in venv
 check_python_package() {
-    python3 -c "import $1" >/dev/null 2>&1
+    /home/henry/randall-clock-desktop-background/venv/bin/python3 -c "import $1" >/dev/null 2>&1
 }
 
-# Function to install Python package
+# Function to install Python package in venv
 install_python_package() {
     echo "Installing $1..."
-    pip3 install "$1" >/dev/null 2>&1
+    /home/henry/randall-clock-desktop-background/venv/bin/pip3 install "$1" >/dev/null 2>&1
 }
 
 # Check for required system packages
@@ -108,30 +108,20 @@ if [ "$response" = "s" ] || [ "$response" = "S" ]; then
     fi
 else
     # Run the location picker
-    python3 src/scripts/pick_location.py
+    /home/henry/randall-clock-desktop-background/venv/bin/python3 src/scripts/pick_location.py
 fi
 
 # Read coordinates from config.ini
-x=$(python3 -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['x'])")
-y=$(python3 -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['y'])")
+x=$(/home/henry/randall-clock-desktop-background/venv/bin/python3 -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['x'])")
+y=$(/home/henry/randall-clock-desktop-background/venv/bin/python3 -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['y'])")
 
 # Create the base globe with red dot
 echo "Creating base globe with red dot..."
-python3 src/black_mode.py --base-globe src/images/base_globe.png --overlay src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --create-base --dot-x "$x" --dot-y "$y"
+/home/henry/randall-clock-desktop-background/venv/bin/python3 src/black_mode.py --base-globe src/images/base_globe.png --overlay src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --create-base --dot-x "$x" --dot-y "$y"
 
 # Verify the base globe with dot was created
 if [ ! -f "src/images/base_globe_with_dot.png" ]; then
     echo "Error: Failed to create base_globe_with_dot.png"
-    exit 1
-fi
-
-# Generate the first frame
-echo "Generating the first frame..."
-python3 src/black_mode.py --base-globe src/images/base_globe_with_dot.png --overlay src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --use-red-dot
-
-# Verify the first frame was created
-if [ ! -f "/tmp/randall-clock/current_frame.png" ]; then
-    echo "Error: Failed to generate first frame"
     exit 1
 fi
 
@@ -150,6 +140,10 @@ echo "$(date): Starting background update" >> "$LOG_FILE"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 FRAME_DIR="/tmp/randall-clock"
 NEW_FRAME="$FRAME_DIR/frame_${TIMESTAMP}.png"
+
+# Generate new frame
+echo "Generating new frame..." >> "$LOG_FILE"
+/home/henry/randall-clock-desktop-background/venv/bin/python3 /home/henry/randall-clock-desktop-background/src/black_mode.py --base-globe /home/henry/randall-clock-desktop-background/src/images/base_globe_with_dot.png --overlay /home/henry/randall-clock-desktop-background/src/images/stationary_overlay.png --temp-dir "$FRAME_DIR" >> "$LOG_FILE" 2>&1
 
 # Log the current frame
 echo "Current frame exists: $(test -f "$FRAME_DIR/current_frame.png" && echo 'yes' || echo 'no')" >> "$LOG_FILE"
@@ -184,7 +178,6 @@ temp_crontab=$(mktemp)
 crontab -l 2>/dev/null | grep -v "randall-clock-desktop-background" > "$temp_crontab"
 
 # Add our new cron jobs
-echo "*/1 * * * * /home/henry/randall-clock-desktop-background/venv/bin/python3 $(pwd)/src/black_mode.py --base-globe $(pwd)/src/images/base_globe_with_dot.png --overlay $(pwd)/src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --use-red-dot" >> "$temp_crontab"
 echo "*/1 * * * * $(pwd)/update_background.sh" >> "$temp_crontab"
 
 # Install the new crontab

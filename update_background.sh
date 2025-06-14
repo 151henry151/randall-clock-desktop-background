@@ -11,6 +11,10 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 FRAME_DIR="/tmp/randall-clock"
 NEW_FRAME="$FRAME_DIR/frame_${TIMESTAMP}.png"
 
+# Generate new frame
+echo "Generating new frame..." >> "$LOG_FILE"
+/home/henry/randall-clock-desktop-background/venv/bin/python3 /home/henry/randall-clock-desktop-background/src/black_mode.py --base-globe /home/henry/randall-clock-desktop-background/src/images/base_globe_with_dot.png --overlay /home/henry/randall-clock-desktop-background/src/images/stationary_overlay.png --temp-dir "$FRAME_DIR" >> "$LOG_FILE" 2>&1
+
 # Log the current frame
 echo "Current frame exists: $(test -f "$FRAME_DIR/current_frame.png" && echo 'yes' || echo 'no')" >> "$LOG_FILE"
 echo "Current frame size: $(ls -l "$FRAME_DIR/current_frame.png" 2>/dev/null || echo 'not found')" >> "$LOG_FILE"
