@@ -33,9 +33,9 @@ if ! command_exists pip3; then
     exit 1
 fi
 
-# Check for feh (required for setting background in i3)
+# Check for feh (required for setting background)
 if ! command_exists feh; then
-    echo "feh is required for setting the background in i3."
+    echo "feh is required for setting the background."
     echo "Would you like to install it? (y/n)"
     read -r install_feh
     if [ "$install_feh" = "y" ] || [ "$install_feh" = "Y" ]; then
@@ -96,11 +96,20 @@ fi
 # Get user's location for the red dot
 echo "You will now be prompted to click your location on the globe."
 echo "This will be used to place the red dot on the clock."
-echo "Press Enter when ready..."
-read -r
+echo "Press Enter to continue, or 's' to skip and use previous location..."
+read -r response
 
-# Run the location picker
-python3 src/scripts/pick_location.py
+if [ "$response" = "s" ] || [ "$response" = "S" ]; then
+    if [ -f "config.ini" ]; then
+        echo "Using previous location from config.ini"
+    else
+        echo "Error: No previous location found in config.ini"
+        exit 1
+    fi
+else
+    # Run the location picker
+    python3 src/scripts/pick_location.py
+fi
 
 # Read coordinates from config.ini
 x=$(python3 -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['x'])")
@@ -126,18 +135,44 @@ if [ ! -f "/tmp/randall-clock/current_frame.png" ]; then
     exit 1
 fi
 
-# Create a symbolic link to the current frame
-ln -sf /tmp/randall-clock/current_frame.png ~/current_frame.png
-
 # Set up the background update script
 echo "Setting up background update script..."
-cat > timeupdate.bash << 'EOF'
+cat > update_background.sh << 'EOF'
 #!/bin/bash
 
-# Set background to the current frame
-feh --image-bg black --bg-max "/tmp/randall-clock/current_frame.png"
+# Log file for debugging
+LOG_FILE="/tmp/randall-clock/update_background.log"
+
+# Log the start of the update
+echo "$(date): Starting background update" >> "$LOG_FILE"
+
+# Create timestamped filename
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+FRAME_DIR="/tmp/randall-clock"
+NEW_FRAME="$FRAME_DIR/frame_${TIMESTAMP}.png"
+
+# Log the current frame
+echo "Current frame exists: $(test -f "$FRAME_DIR/current_frame.png" && echo 'yes' || echo 'no')" >> "$LOG_FILE"
+echo "Current frame size: $(ls -l "$FRAME_DIR/current_frame.png" 2>/dev/null || echo 'not found')" >> "$LOG_FILE"
+
+# Copy the current frame to a new timestamped file
+cp "$FRAME_DIR/current_frame.png" "$NEW_FRAME"
+echo "Created new frame: $NEW_FRAME" >> "$LOG_FILE"
+
+# Update the symlink
+ln -sf "$NEW_FRAME" "$FRAME_DIR/current_frame.png"
+echo "Updated symlink" >> "$LOG_FILE"
+
+# Update the background using feh
+export DISPLAY=:0
+export XAUTHORITY=/home/henry/.Xauthority
+feh --image-bg black --bg-max "$NEW_FRAME"
+echo "Updated background using feh" >> "$LOG_FILE"
+
+echo "$(date): Background update complete" >> "$LOG_FILE"
 EOF
-chmod +x timeupdate.bash
+
+chmod +x update_background.sh
 
 # Set up the cron jobs
 echo "Setting up automatic updates..."
@@ -149,8 +184,8 @@ temp_crontab=$(mktemp)
 crontab -l 2>/dev/null | grep -v "randall-clock-desktop-background" > "$temp_crontab"
 
 # Add our new cron jobs
-echo "*/1 * * * * $(pwd)/src/black_mode.py --base-globe $(pwd)/src/images/base_globe_with_dot.png --overlay $(pwd)/src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --use-red-dot" >> "$temp_crontab"
-echo "*/1 * * * * $(pwd)/timeupdate.bash" >> "$temp_crontab"
+echo "*/1 * * * * /home/henry/randall-clock-desktop-background/venv/bin/python3 $(pwd)/src/black_mode.py --base-globe $(pwd)/src/images/base_globe_with_dot.png --overlay $(pwd)/src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --use-red-dot" >> "$temp_crontab"
+echo "*/1 * * * * $(pwd)/update_background.sh" >> "$temp_crontab"
 
 # Install the new crontab
 crontab "$temp_crontab"
@@ -159,7 +194,7 @@ crontab "$temp_crontab"
 rm "$temp_crontab"
 
 # Set the initial background
-./timeupdate.bash
+./update_background.sh
 
 echo "Installation complete!"
 echo "The background will update every minute."

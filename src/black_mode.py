@@ -1,9 +1,19 @@
+#!/usr/bin/env python3
+
 import os
 import math
 from PIL import Image, ImageDraw, ImageOps
 import numpy as np
 from datetime import datetime, timezone, timedelta
 import configparser
+import logging
+
+# Set up logging
+logging.basicConfig(
+    filename='/tmp/randall-clock/black_mode.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(message)s'
+)
 
 class BlackModeGenerator:
     def __init__(self, base_globe_path, overlay_path, temp_dir, use_red_dot=False):
@@ -29,6 +39,8 @@ class BlackModeGenerator:
         config.read('config.ini')
         self.globe_center_x = int(config['BLACK_GLOBE']['center_x'])
         self.globe_center_y = int(config['BLACK_GLOBE']['center_y'])
+        
+        logging.info(f"Initialized BlackModeGenerator with base_globe={base_globe_path}, overlay={overlay_path}, temp_dir={temp_dir}")
     
     def calculate_rotation(self):
         """Calculate the rotation angle based on current time."""
@@ -45,10 +57,14 @@ class BlackModeGenerator:
         degrees = (total_seconds * 360 / (24 * 3600)) + 195
         
         # Ensure we're rotating clockwise and 0 is at 12 o'clock
-        return -degrees  # Negative for clockwise rotation
+        rotation = -degrees  # Negative for clockwise rotation
+        logging.info(f"Calculated rotation angle: {rotation} degrees for time {now}")
+        return rotation
     
     def generate_frame(self, hour, minute):
         """Generate a frame for the specified time."""
+        logging.info(f"Generating frame for {hour:02d}:{minute:02d}")
+        
         # Calculate rotation angle
         rotation = self.calculate_rotation()
         
@@ -67,6 +83,7 @@ class BlackModeGenerator:
         # DEBUG: Save the rotated globe before compositing
         debug_path = os.path.join(self.temp_dir, f"debug_rotated_globe_{hour:02d}h{minute:02d}m.png")
         rotated_globe.save(debug_path)
+        logging.info(f"Saved debug rotated globe to {debug_path}")
         
         # Create a transparent background
         final = Image.new('RGBA', self.overlay.size, (0,0,0,0))
@@ -87,6 +104,7 @@ class BlackModeGenerator:
         """Generate the next frame based on current time."""
         # Get current local time
         now = datetime.now()
+        logging.info(f"Generating frames for current time: {now}")
         
         # Generate current frame
         current_frame = self.generate_frame(now.hour, now.minute)
@@ -102,10 +120,14 @@ class BlackModeGenerator:
         current_frame.save(current_path)
         next_frame.save(next_path)
         
+        logging.info(f"Saved current frame to {current_path}")
+        logging.info(f"Saved next frame to {next_path}")
+        
         return current_path, next_path
 
     def add_red_dot(self, x, y, rotation_degrees=0):
         """Add a glowing red dot at the specified coordinates."""
+        logging.info(f"Adding red dot at coordinates ({x}, {y})")
         # Create a new image with alpha channel for the dot
         dot_img = Image.new('RGBA', self.globe.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(dot_img)
@@ -130,9 +152,11 @@ class BlackModeGenerator:
         
         # Composite the dot onto the globe
         self.globe = Image.alpha_composite(self.globe, dot_img)
+        logging.info("Red dot added successfully")
 
 def create_base_globe_with_dot(base_globe_path, x, y, output_path):
     """Create a base globe image with the red dot permanently placed at the specified coordinates."""
+    logging.info(f"Creating base globe with red dot at ({x}, {y})")
     # Load the base globe
     base_globe = Image.open(base_globe_path).convert('RGBA')
     
@@ -163,6 +187,7 @@ def create_base_globe_with_dot(base_globe_path, x, y, output_path):
     
     # Save the result
     base_globe.save(output_path)
+    logging.info(f"Created base globe with red dot at: {output_path}")
     print(f"Created base globe with red dot at ({x}, {y})")
 
 def main():
@@ -179,9 +204,11 @@ def main():
     parser.add_argument('--dot-y', type=int, help='Y coordinate for red dot')
     
     args = parser.parse_args()
+    logging.info(f"Starting black_mode.py with arguments: {args}")
     
     if args.create_base:
         if not args.dot_x or not args.dot_y:
+            logging.error("Error: --dot-x and --dot-y are required when --create-base is used")
             print("Error: --dot-x and --dot-y are required when --create-base is used")
             return
         

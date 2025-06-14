@@ -23,16 +23,10 @@ echo "Created new frame: $NEW_FRAME" >> "$LOG_FILE"
 ln -sf "$NEW_FRAME" "$FRAME_DIR/current_frame.png"
 echo "Updated symlink" >> "$LOG_FILE"
 
-# Create a temporary script to run feh
-TEMP_SCRIPT="/tmp/randall-clock/run_feh.sh"
-echo '#!/bin/bash' > "$TEMP_SCRIPT"
-echo 'export DISPLAY=:0' >> "$TEMP_SCRIPT"
-echo 'export XAUTHORITY=/home/henry/.Xauthority' >> "$TEMP_SCRIPT"
-echo "feh --image-bg black --bg-max \"$NEW_FRAME\"" >> "$TEMP_SCRIPT"
-chmod +x "$TEMP_SCRIPT"
-
-# Use 'at' to run the script in the user's session
-echo "$TEMP_SCRIPT" | at now
-echo "Scheduled feh to run via 'at'" >> "$LOG_FILE"
+# Update the background using feh
+export DISPLAY=:0
+export XAUTHORITY=/home/henry/.Xauthority
+feh --image-bg black --bg-max "$NEW_FRAME"
+echo "Updated background using feh" >> "$LOG_FILE"
 
 echo "$(date): Background update complete" >> "$LOG_FILE"
