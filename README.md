@@ -176,7 +176,18 @@ height = 960
 - XKCD "Now" clock: [xkcd.com/1335](https://xkcd.com/1335)
 - Explanation: [explainxkcd.com/1335](https://explainxkcd.com/1335)
 - Black globe version and batch image processing: [Fred Weinhaus's ImageMagick scripts](http://www.fmwconcepts.com/imagemagick/index.php)
-- See `posterity.pdf` for the original email exchange with Fred Weinhaus.
 
 ## Black Mode
 This mode displays a black background with a green overlay showing the current time. The clock is viewed from the south pole and uses a 24-hour dial. The time display is calibrated with a fixed offset to ensure correct time alignment regardless of installation time.
+
+## Black Mode Globe Workflow
+
+The black mode globe is generated in two phases:
+
+1. **Installation Phase**  
+   During installation (via `install_blackmode.sh`), a base globe image is created with the red dot already placed on it. This is done using the `--create-base` flag along with the `--dot-x` and `--dot-y` coordinates. The resulting image is saved as `base_globe_with_dot.png`.
+
+2. **Update Phase**  
+   During updates (via `update_background.sh`), the pre-created `base_globe_with_dot.png` is used as the base image. Since the red dot is already part of the base image, the update process does not add a new dot. Therefore, the update script sets `use_red_dot` to `False`, and `dot_x` and `dot_y` are `None`. The workflow is as follows:
+   - **Installation**: Create base globe with red dot → save as `base_globe_with_dot.png`
+   - **Updates**: Use `base_globe_with_dot.png` → rotate it → update background
