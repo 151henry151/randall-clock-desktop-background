@@ -242,10 +242,11 @@ echo "Setting up automatic updates..."
 # Create a temporary file for the new crontab
 temp_crontab=$(mktemp)
 
-# Get current crontab and remove any existing clock-related jobs
-crontab -l 2>/dev/null | grep -v "randall-clock-desktop-background" > "$temp_crontab"
+# Get current crontab and remove only existing update_background.sh jobs
+# (preserve @reboot entries since they don't contain update_background.sh)
+crontab -l 2>/dev/null | grep -v "update_background.sh" > "$temp_crontab"
 
-# Add our new cron jobs
+# Add our new cron jobs (periodic update job only, @reboot entries are preserved above)
 echo "*/$update_interval * * * * $(pwd)/update_background.sh" >> "$temp_crontab"
 
 # Install the new crontab
