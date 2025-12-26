@@ -251,9 +251,9 @@ echo "Setting up automatic updates..."
 # Create a temporary file for the new crontab
 temp_crontab=$(mktemp)
 
-# Get current crontab and remove only existing update_background.sh jobs
-# (preserve @reboot entries since they don't contain update_background.sh)
-crontab -l 2>/dev/null | grep -v "update_background.sh" > "$temp_crontab"
+# Get current crontab and remove existing update_background.sh jobs and install_blackmode.sh @reboot entries
+# (we're replacing @reboot with systemd user service which runs after graphical session)
+crontab -l 2>/dev/null | grep -v "update_background.sh" | grep -v "@reboot.*install_blackmode.sh" > "$temp_crontab"
 
 # Add our new cron jobs (periodic update job only, @reboot entries are preserved above)
 echo "*/$update_interval * * * * $SCRIPT_DIR/update_background.sh" >> "$temp_crontab"
@@ -263,6 +263,35 @@ crontab "$temp_crontab"
 
 # Clean up
 rm "$temp_crontab"
+
+# Set up systemd user service for running at login (replaces @reboot cron)
+echo "Setting up systemd user service for login..."
+mkdir -p ~/.config/systemd/user
+
+# Remove old service if it exists
+systemctl --user stop randall-clock-setup.service 2>/dev/null
+systemctl --user disable randall-clock-setup.service 2>/dev/null
+
+cat > ~/.config/systemd/user/randall-clock-setup.service << EOF
+[Unit]
+Description=Setup Randall Clock Desktop Background at Login
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=$SCRIPT_DIR/update_background.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+EOF
+
+# Enable and start the service
+systemctl --user daemon-reload
+systemctl --user enable randall-clock-setup.service
+systemctl --user start randall-clock-setup.service
+echo "Systemd user service enabled. It will run update_background.sh on each login."
 
 # Set the initial background
 "$SCRIPT_DIR/update_background.sh"
