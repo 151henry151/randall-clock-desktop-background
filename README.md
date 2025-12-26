@@ -164,9 +164,16 @@ height = 960
 - Make sure all dependencies are installed (see above).
 - If the background is not updating:
   1. Make sure `feh` is installed
-2. Check if the script is executable
+  2. Check if the script is executable
   3. Verify your display is set correctly (e.g., `DISPLAY=:0`)
-4. Check cron logs: `grep CRON /var/log/syslog`
+  4. Check cron logs: `grep CRON /var/log/syslog`
+  5. For Black Mode: Check systemd user service status: `systemctl --user status randall-clock-setup.service`
+  6. For Black Mode: Check service logs: `journalctl --user -u randall-clock-setup.service`
+  7. Check the update log: `tail -f /tmp/randall-clock/update_background.log`
+- If the background doesn't set on reboot/login:
+  1. Verify the systemd user service is enabled: `systemctl --user is-enabled randall-clock-setup.service`
+  2. Ensure the service runs after login: `systemctl --user start randall-clock-setup.service`
+  3. Check that X display is available when the service runs
 - If you have issues with the red dot or image generation, check the output directories and rerun the relevant scripts with overwrite enabled.
 
 ---
