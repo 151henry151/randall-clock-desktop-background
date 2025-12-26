@@ -77,6 +77,44 @@ if ! check_python_package "matplotlib"; then
     install_python_package "matplotlib"
 fi
 
+# Parse command-line arguments
+update_interval=""
+dot_option=""
+
+while getopts "i:d:h" opt; do
+    case $opt in
+        i)
+            update_interval="$OPTARG"
+            ;;
+        d)
+            dot_option="$OPTARG"
+            ;;
+        h)
+            echo "Usage: $0 [-i interval] [-d dot_option]"
+            echo ""
+            echo "Options:"
+            echo "  -i interval    Update interval in minutes (1-60, e.g., 5)"
+            echo "  -d dot_option  Red dot option: 's' to skip, 'p' to pick location"
+            echo "  -h             Show this help message"
+            echo ""
+            echo "If options are not provided, the script will run interactively."
+            exit 0
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            echo "Use -h for help"
+            exit 1
+            ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Shift past the parsed options
+shift $((OPTIND-1))
+
 # Create necessary directories
 echo "Creating necessary directories..."
 mkdir -p src/images
@@ -93,10 +131,12 @@ if [ ! -f "src/images/stationary_overlay.png" ]; then
     exit 1
 fi
 
-# Get update interval from user
-echo "How often should the clock update? (in minutes)"
-echo "Enter a number between 1 and 60 (e.g., 1, 3, 5, 15):"
-read -r update_interval
+# Get update interval from user (if not provided via command line)
+if [ -z "$update_interval" ]; then
+    echo "How often should the clock update? (in minutes)"
+    echo "Enter a number between 1 and 60 (e.g., 1, 3, 5, 15):"
+    read -r update_interval
+fi
 
 # Validate input
 if ! [[ "$update_interval" =~ ^[1-9][0-9]*$ ]] || [ "$update_interval" -gt 60 ]; then
@@ -106,12 +146,15 @@ fi
 
 echo "Clock will update every $update_interval minute(s)"
 
-# Get user's location for the red dot
-echo "You will now be prompted to click your location on the globe."
-echo "This will be used to place the red dot on the clock."
-echo "Press Enter to continue, or 's' to skip and use previous location..."
-read -r response
+# Get user's location for the red dot (if not provided via command line)
+if [ -z "$dot_option" ]; then
+    echo "You will now be prompted to click your location on the globe."
+    echo "This will be used to place the red dot on the clock."
+    echo "Press Enter to continue, or 's' to skip and use previous location..."
+    read -r dot_option
+fi
 
+response="$dot_option"
 if [ "$response" = "s" ] || [ "$response" = "S" ]; then
     if [ -f "config.ini" ]; then
         echo "Using previous location from config.ini"
