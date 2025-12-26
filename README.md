@@ -105,15 +105,15 @@ This will:
    - Make the update script executable:
      ```bash
      chmod +x timeupdate.bash
-     ```
+   ```
    - Add a cron job:
-     ```bash
-     crontab -e
+   ```bash
+   crontab -e
      # For 1-minute interval:
      * * * * * /path/to/timeupdate.bash
      # For 15-minute interval:
-     */15 * * * * /path/to/timeupdate.bash
-     ```
+   */15 * * * * /path/to/timeupdate.bash
+   ```
 
 ---
 
@@ -164,9 +164,9 @@ height = 960
 - Make sure all dependencies are installed (see above).
 - If the background is not updating:
   1. Make sure `feh` is installed
-  2. Check if the script is executable
+2. Check if the script is executable
   3. Verify your display is set correctly (e.g., `DISPLAY=:0`)
-  4. Check cron logs: `grep CRON /var/log/syslog`
+4. Check cron logs: `grep CRON /var/log/syslog`
 - If you have issues with the red dot or image generation, check the output directories and rerun the relevant scripts with overwrite enabled.
 
 ---

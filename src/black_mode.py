@@ -102,17 +102,23 @@ class BlackModeGenerator:
         
         return final
     
-    def generate_next_frame(self):
-        """Generate the next frame based on current time."""
+    def generate_next_frame(self, update_interval=1):
+        """Generate the next frame based on current time, aligned to the update interval."""
         # Get current local time
         now = datetime.now()
-        logging.info(f"Generating frames for current time: {now}")
+        logging.info(f"Generating frames for current time: {now} with interval: {update_interval} minutes")
         
-        # Generate current frame
-        current_frame = self.generate_frame(now.hour, now.minute)
+        # Calculate the time aligned to the update interval
+        # For example, if interval is 5 minutes and current time is 14:23,
+        # we want to generate a frame for 14:20 (the most recent 5-minute boundary)
+        aligned_minute = (now.minute // update_interval) * update_interval
+        aligned_time = now.replace(minute=aligned_minute, second=0, microsecond=0)
         
-        # Generate next frame
-        next_time = now + timedelta(minutes=1)
+        # Generate frame for the aligned time
+        current_frame = self.generate_frame(aligned_time.hour, aligned_time.minute)
+        
+        # Generate next frame (next interval boundary)
+        next_time = aligned_time + timedelta(minutes=update_interval)
         next_frame = self.generate_frame(next_time.hour, next_time.minute)
         
         # Save frames
@@ -122,8 +128,8 @@ class BlackModeGenerator:
         current_frame.save(current_path)
         next_frame.save(next_path)
         
-        logging.info(f"Saved current frame to {current_path}")
-        logging.info(f"Saved next frame to {next_path}")
+        logging.info(f"Saved current frame (aligned to {aligned_time}) to {current_path}")
+        logging.info(f"Saved next frame ({next_time}) to {next_path}")
         
         return current_path, next_path
 
@@ -204,6 +210,7 @@ def main():
     parser.add_argument('--create-base', action='store_true', help='Create base globe with red dot')
     parser.add_argument('--dot-x', type=int, help='X coordinate for red dot')
     parser.add_argument('--dot-y', type=int, help='Y coordinate for red dot')
+    parser.add_argument('--update-interval', type=int, default=1, help='Update interval in minutes (default: 1)')
     
     args = parser.parse_args()
     logging.info(f"Starting black_mode.py with arguments: {args}")
@@ -227,7 +234,7 @@ def main():
         args.use_red_dot
     )
     
-    current_path, next_path = generator.generate_next_frame()
+    current_path, next_path = generator.generate_next_frame(args.update_interval)
     print(f"Current frame: {current_path}")
     print(f"Next frame: {next_path}")
 
