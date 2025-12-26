@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Determine script directory (resolves symlinks) - must be done first
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Function to check if a command exists
 command_exists() {
     command -v "$1" >/dev/null 2>&1
@@ -7,13 +10,13 @@ command_exists() {
 
 # Function to check if a Python package is installed in venv
 check_python_package() {
-    /home/henry/randall-clock-desktop-background/venv/bin/python3 -c "import $1" >/dev/null 2>&1
+    "${SCRIPT_DIR}/venv/bin/python3" -c "import $1" >/dev/null 2>&1
 }
 
 # Function to install Python package in venv
 install_python_package() {
     echo "Installing $1..."
-    /home/henry/randall-clock-desktop-background/venv/bin/pip3 install "$1" >/dev/null 2>&1
+    "${SCRIPT_DIR}/venv/bin/pip3" install "$1" >/dev/null 2>&1
 }
 
 # Check for required system packages
@@ -115,6 +118,12 @@ done
 # Shift past the parsed options
 shift $((OPTIND-1))
 
+# Change to the script's directory so relative paths work
+cd "$SCRIPT_DIR" || {
+    echo "Error: Cannot change to script directory: $SCRIPT_DIR"
+    exit 1
+}
+
 # Create necessary directories
 echo "Creating necessary directories..."
 mkdir -p src/images
@@ -164,15 +173,15 @@ if [ "$response" = "s" ] || [ "$response" = "S" ]; then
     fi
 else
     # Run the location picker
-    /home/henry/randall-clock-desktop-background/venv/bin/python3 src/scripts/pick_location.py
+    "${SCRIPT_DIR}/venv/bin/python3" src/scripts/pick_location.py
 fi
 
 # Read coordinates from config.ini
-x=$(/home/henry/randall-clock-desktop-background/venv/bin/python3 -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['x'])")
-y=$(/home/henry/randall-clock-desktop-background/venv/bin/python3 -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['y'])")
+x=$("${SCRIPT_DIR}/venv/bin/python3" -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['x'])")
+y=$("${SCRIPT_DIR}/venv/bin/python3" -c "import configparser; c=configparser.ConfigParser(); c.read('config.ini'); print(c['LOCATION']['y'])")
 
 # Add update interval to config.ini
-/home/henry/randall-clock-desktop-background/venv/bin/python3 -c "
+"${SCRIPT_DIR}/venv/bin/python3" -c "
 import configparser
 c = configparser.ConfigParser()
 c.read('config.ini')
@@ -185,7 +194,7 @@ with open('config.ini', 'w') as f:
 
 # Create the base globe with red dot
 echo "Creating base globe with red dot..."
-/home/henry/randall-clock-desktop-background/venv/bin/python3 src/black_mode.py --base-globe src/images/base_globe.png --overlay src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --create-base --dot-x "$x" --dot-y "$y"
+"${SCRIPT_DIR}/venv/bin/python3" src/black_mode.py --base-globe src/images/base_globe.png --overlay src/images/stationary_overlay.png --temp-dir /tmp/randall-clock --create-base --dot-x "$x" --dot-y "$y"
 
 # Verify the base globe with dot was created
 if [ ! -f "src/images/base_globe_with_dot.png" ]; then
@@ -211,7 +220,7 @@ NEW_FRAME="\$FRAME_DIR/frame_\${TIMESTAMP}.png"
 
 # Generate new frame
 echo "Generating new frame..." >> "\$LOG_FILE"
-/home/henry/randall-clock-desktop-background/venv/bin/python3 /home/henry/randall-clock-desktop-background/src/black_mode.py --base-globe /home/henry/randall-clock-desktop-background/src/images/base_globe_with_dot.png --overlay /home/henry/randall-clock-desktop-background/src/images/stationary_overlay.png --temp-dir "\$FRAME_DIR" --update-interval $update_interval >> "\$LOG_FILE" 2>&1
+$SCRIPT_DIR/venv/bin/python3 $SCRIPT_DIR/src/black_mode.py --base-globe $SCRIPT_DIR/src/images/base_globe_with_dot.png --overlay $SCRIPT_DIR/src/images/stationary_overlay.png --temp-dir "\$FRAME_DIR" --update-interval $update_interval >> "\$LOG_FILE" 2>&1
 
 # Log the current frame
 echo "Current frame exists: \$(test -f "\$FRAME_DIR/current_frame.png" && echo 'yes' || echo 'no')" >> "\$LOG_FILE"
@@ -247,7 +256,7 @@ temp_crontab=$(mktemp)
 crontab -l 2>/dev/null | grep -v "update_background.sh" > "$temp_crontab"
 
 # Add our new cron jobs (periodic update job only, @reboot entries are preserved above)
-echo "*/$update_interval * * * * $(pwd)/update_background.sh" >> "$temp_crontab"
+echo "*/$update_interval * * * * $SCRIPT_DIR/update_background.sh" >> "$temp_crontab"
 
 # Install the new crontab
 crontab "$temp_crontab"
@@ -256,7 +265,7 @@ crontab "$temp_crontab"
 rm "$temp_crontab"
 
 # Set the initial background
-./update_background.sh
+"$SCRIPT_DIR/update_background.sh"
 
 echo "Installation complete!"
 echo "The background will update every $update_interval minute(s)."
