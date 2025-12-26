@@ -180,6 +180,79 @@ height = 960
 ## Black Mode
 This mode displays a black background with a green overlay showing the current time. The clock is viewed from the south pole and uses a 24-hour dial. The time display is calibrated with a fixed offset to ensure correct time alignment regardless of installation time.
 
+## Black Mode Installation
+
+### Quick Install
+
+Run the installation script:
+```bash
+./install_blackmode.sh
+```
+
+This will:
+- Check and install dependencies
+- Prompt for update interval (how often the clock updates, in minutes)
+- Prompt for location (to place the red dot on the globe)
+- Generate the base globe image with the red dot
+- Set up a cron job for periodic background updates
+- Set up a systemd user service to run the background update at login
+- Set the initial desktop background
+
+### Command-Line Arguments
+
+For automated or non-interactive installation, you can use command-line arguments:
+
+```bash
+./install_blackmode.sh -i 5 -d s
+```
+
+**Options:**
+- `-i interval` - Update interval in minutes (1-60, e.g., `-i 5` for 5-minute updates)
+- `-d dot_option` - Red dot option: `s` to skip (use previous location from config.ini) or `p` to pick location interactively
+- `-h` - Show help message
+
+**Examples:**
+```bash
+# Interactive installation
+./install_blackmode.sh
+
+# Non-interactive: 5-minute updates, skip location picker
+./install_blackmode.sh -i 5 -d s
+
+# Non-interactive: 3-minute updates, pick new location
+./install_blackmode.sh -i 3 -d p
+
+# Show help
+./install_blackmode.sh -h
+```
+
+### Automatic Setup at Login
+
+The installation script automatically sets up a systemd user service (`randall-clock-setup.service`) that runs `update_background.sh` when you log in. This ensures:
+
+- The background is set correctly after reboot/login
+- X display is available (systemd service runs after graphical-session.target)
+- The clock starts correctly on each login
+
+The service is enabled automatically during installation. To manually check its status:
+```bash
+systemctl --user status randall-clock-setup.service
+```
+
+To disable it:
+```bash
+systemctl --user disable randall-clock-setup.service
+```
+
+### Periodic Updates
+
+The installation script also sets up a cron job that runs `update_background.sh` at your specified interval (e.g., every 5 minutes). This keeps the clock display current throughout your session.
+
+To view your cron jobs:
+```bash
+crontab -l
+```
+
 ## Black Mode Globe Workflow
 
 The black mode globe is generated in two phases:
