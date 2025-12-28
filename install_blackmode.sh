@@ -207,15 +207,18 @@ echo "Setting up background update script..."
 cat > update_background.sh << EOF
 #!/bin/bash
 
+# Create frame directory if it doesn't exist
+FRAME_DIR="/tmp/randall-clock"
+mkdir -p "\$FRAME_DIR"
+
 # Log file for debugging
-LOG_FILE="/tmp/randall-clock/update_background.log"
+LOG_FILE="\$FRAME_DIR/update_background.log"
 
 # Log the start of the update
 echo "\$(date): Starting background update" >> "\$LOG_FILE"
 
 # Create timestamped filename
 TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
-FRAME_DIR="/tmp/randall-clock"
 NEW_FRAME="\$FRAME_DIR/frame_\${TIMESTAMP}.png"
 
 # Generate new frame
