@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.8] - 2026-06-24
+
+### Changed
+
+- Retune web red-dot projection (`lon0 = 15°`, alpha centroid center, config globe radius 491) for better east-coast accuracy
+- Add once-per-second brightness pulse to the web red-dot
+
 ## [1.1.7] - 2026-06-24
 
 ### Changed

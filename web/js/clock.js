@@ -32,14 +32,23 @@
     });
   }
 
-  function drawRedDot(ctx, x, y) {
+  function drawRedDot(ctx, x, y, brightness) {
+    var pulse = brightness != null ? brightness : 1;
+    var minPulse = 0.35;
+    var scale = minPulse + (1 - minPulse) * pulse;
     for (var i = 0; i < DOT_LAYERS.length; i++) {
       var layer = DOT_LAYERS[i];
       ctx.beginPath();
       ctx.arc(x, y, layer.radius, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255, 0, 0, ' + (layer.alpha / 255) + ')';
+      ctx.fillStyle = 'rgba(255, 0, 0, ' + ((layer.alpha * scale) / 255) + ')';
       ctx.fill();
     }
+  }
+
+  /** Brightness pulse 0–1, cycling once per UTC second. */
+  function dotPulsePhase(date) {
+    var t = date.getUTCSeconds() + date.getUTCMilliseconds() / 1000;
+    return (Math.sin(2 * Math.PI * t) + 1) / 2;
   }
 
   /**
@@ -93,7 +102,6 @@
     this.globeGeometry = null;
     this.location = null;
     this.animationId = null;
-    this.lastFrameTime = 0;
     this.verticalOffset = options.verticalOffset != null ? options.verticalOffset : VERTICAL_OFFSET;
   }
 
@@ -163,7 +171,7 @@
         globe
       );
       var clamped = global.RandallProjection.clampToGlobe(point.x, point.y, globe);
-      drawRedDot(globeCtx, clamped.x, clamped.y);
+      drawRedDot(globeCtx, clamped.x, clamped.y, dotPulsePhase(date));
     }
 
     ctx.save();
@@ -182,15 +190,11 @@
     }
 
     function tick(now) {
-      if (now - self.lastFrameTime >= 1000) {
-        self.renderFrame(new Date());
-        self.lastFrameTime = now;
-      }
+      self.renderFrame(new Date());
       self.animationId = requestAnimationFrame(tick);
     }
 
     this.renderFrame(new Date());
-    this.lastFrameTime = performance.now();
     this.animationId = requestAnimationFrame(tick);
   };
 

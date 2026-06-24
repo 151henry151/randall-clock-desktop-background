@@ -10,8 +10,14 @@
 
   var DEG = Math.PI / 180;
 
-  /** Prime meridian orientation in the static base_globe artwork (degrees). */
-  var GLOBE_LON0 = 8;
+  /**
+   * Prime meridian orientation in the static base_globe artwork (degrees).
+   * Tuned against painted continent outlines (compromise of US east coast + Eurasia).
+   */
+  var GLOBE_LON0 = 15;
+
+  /** Geographic radius of the visible globe disk in full-frame artwork (pixels). */
+  var FULL_FRAME_GLOBE_RADIUS = 491;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -19,11 +25,6 @@
 
   /**
    * Convert geographic coordinates to pixel coordinates on the globe image.
-   *
-   * @param {number} lat - Latitude in degrees (-90 to 90).
-   * @param {number} lon - Longitude in degrees (-180 to 180).
-   * @param {object} globe - Globe geometry { centerX, centerY, radius, lon0? }.
-   * @returns {{ x: number, y: number, rho: number, theta: number }}
    */
   function latLonToGlobePixel(lat, lon, globe) {
     var centerX = globe.centerX;
@@ -60,15 +61,53 @@
   }
 
   /**
-   * Measure the visible globe disk radius from image alpha along radial rays.
-   * Full-frame artwork (1980x1977) has a ~491px disk, not half the canvas width.
+   * Find globe disk center from the alpha centroid of opaque pixels.
    */
-  function detectGlobeDiskRadius(image) {
+  function detectGlobeCenter(image) {
     var width = image.naturalWidth || image.width;
     var height = image.naturalHeight || image.height;
-    var centerX = width / 2;
-    var centerY = height / 2;
-    var maxScan = Math.min(centerX, centerY);
+    var canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0);
+    var data = ctx.getImageData(0, 0, width, height).data;
+    var sumX = 0;
+    var sumY = 0;
+    var count = 0;
+
+    for (var y = 0; y < height; y++) {
+      for (var x = 0; x < width; x++) {
+        if (data[(y * width + x) * 4 + 3] > 0) {
+          sumX += x;
+          sumY += y;
+          count++;
+        }
+      }
+    }
+
+    if (!count) {
+      return { centerX: width / 2, centerY: height / 2 };
+    }
+
+    return {
+      centerX: sumX / count,
+      centerY: sumY / count
+    };
+  }
+
+  /**
+   * Measure the visible globe disk radius from image alpha along radial rays.
+   */
+  function detectGlobeDiskRadius(image, centerX, centerY) {
+    var width = image.naturalWidth || image.width;
+    var height = image.naturalHeight || image.height;
+
+    if (width >= 1900) {
+      return FULL_FRAME_GLOBE_RADIUS;
+    }
+
+    var maxScan = Math.min(centerX, centerY, width - centerX, height - centerY);
     var canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
@@ -106,30 +145,21 @@
     return samples[Math.floor(samples.length / 2)];
   }
 
-  /**
-   * Build globe geometry from a loaded image element.
-   *
-   * @param {HTMLImageElement} image
-   * @param {number} [lon0]
-   * @returns {{ centerX: number, centerY: number, radius: number, lon0: number, width: number, height: number }}
-   */
   function globeGeometryFromImage(image, lon0) {
     var width = image.naturalWidth || image.width;
     var height = image.naturalHeight || image.height;
+    var center = detectGlobeCenter(image);
 
     return {
-      centerX: width / 2,
-      centerY: height / 2,
-      radius: detectGlobeDiskRadius(image),
+      centerX: center.centerX,
+      centerY: center.centerY,
+      radius: detectGlobeDiskRadius(image, center.centerX, center.centerY),
       lon0: lon0 != null ? lon0 : GLOBE_LON0,
       width: width,
       height: height
     };
   }
 
-  /**
-   * Clamp a dot position to the globe disk if floating-point error pushes it outside.
-   */
   function clampToGlobe(x, y, globe) {
     var dx = x - globe.centerX;
     var dy = y - globe.centerY;
@@ -146,9 +176,11 @@
 
   global.RandallProjection = {
     GLOBE_LON0: GLOBE_LON0,
+    FULL_FRAME_GLOBE_RADIUS: FULL_FRAME_GLOBE_RADIUS,
     latLonToGlobePixel: latLonToGlobePixel,
     globeGeometryFromImage: globeGeometryFromImage,
     detectGlobeDiskRadius: detectGlobeDiskRadius,
+    detectGlobeCenter: detectGlobeCenter,
     clampToGlobe: clampToGlobe
   };
 })(typeof window !== 'undefined' ? window : this);

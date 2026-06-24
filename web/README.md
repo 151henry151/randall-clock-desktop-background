@@ -45,7 +45,7 @@ The globe renders immediately after assets load. The red dot appears once a loca
 
 ## Red dot placement
 
-The globe artwork uses a **south-pole azimuthal equidistant** projection. Geographic coordinates are converted to pixel coordinates with a single orientation constant (`lon0 = 8°`) matching the static artwork's 00h00m reference frame.
+Geographic coordinates are converted to pixel coordinates with a south-pole azimuthal equidistant projection. The artwork orientation constant is `lon0 = 15°` (see `projection.js`), tuned against painted continent outlines.
 
 Validate placement with the QA tool:
 
