@@ -1,20 +1,71 @@
-# Randall Clock Desktop Background
+# Randall Clock
 
-**Current Version: 1.1.0**
+**Current Version: 1.1.6**
 
-Change your desktop background using the XKCD "Now" clock or the "dark mode" rendition of it (with green overlay!)
+**Live web clock:** [hromp.com/clock/](https://hromp.com/clock/)
 
-Optionally also put a red dot on the image showing your location.
+Change your Linux desktop background using the XKCD "Now" clock or the "dark mode" rendition of it (with green overlay!). The same Black Mode clock is also available as a static web page with automatic red-dot placement from the viewer's geolocation.
+
+Optionally put a red dot on the image showing your location.
 
 Special thanks to Randall Munroe and Fred Weinhaus
 
 ---
 
-## Web Deployment
+## Web Clock
 
-Serve the Black Mode clock as a static web page with automatic red-dot placement from the viewer's IP or browser geolocation. See [`web/README.md`](web/README.md) for setup, asset copying, and nginx/Apache configuration examples.
+The web version lives entirely under [`web/`](web/) and does not modify the desktop install. Full details are in [`web/README.md`](web/README.md).
 
-The desktop install is unchanged — the web version lives entirely under `web/`.
+### Quick deploy
+
+1. Serve the `web/` directory as static files (nginx, Apache, or any static host).
+2. Use HTTPS in production (browser geolocation requires a secure context).
+3. Image assets are in [`web/assets/`](web/assets/) (`base_globe.png`, `stationary_overlay.png`).
+
+Local smoke test:
+
+```bash
+cd web && python3 -m http.server 8080
+# open http://localhost:8080/
+```
+
+### nginx (subpath example)
+
+If the clock is served from a subpath such as `/clock/` (as on [hromp.com/clock/](https://hromp.com/clock/)), see [`web/deploy/nginx-subpath.conf.example`](web/deploy/nginx-subpath.conf.example). You need:
+
+- A `location` block to serve files from `web/`
+- A same-origin geolocation proxy (`location /clock/api/geo`) if your site CSP blocks third-party geo APIs
+
+```nginx
+location /clock/api/geo {
+    proxy_pass https://ipwho.is/;
+    proxy_set_header Host ipwho.is;
+    proxy_ssl_server_name on;
+    add_header Cache-Control "no-store";
+}
+
+location /clock/ {
+    alias /path/to/randall-clock/web/;
+    index index.html;
+    try_files $uri $uri/ /clock/index.html;
+}
+```
+
+For a dedicated vhost at the domain root, see [`web/deploy/nginx.conf.example`](web/deploy/nginx.conf.example). Apache examples are in [`web/deploy/apache.conf.example`](web/deploy/apache.conf.example).
+
+### Geolocation
+
+| Priority | Source | Notes |
+|----------|--------|-------|
+| 1 | URL params | `?lat=44.5&lon=-72.5` for testing |
+| 2 | Browser | Prompts for permission; most accurate |
+| 3 | IP address | Runs in parallel; used when browser access is denied |
+
+The globe and correct time display work without geolocation — only the red dot needs a location.
+
+### Validate red-dot placement
+
+With the dev server running, open [`web/tools/validate-projection.html`](web/tools/validate-projection.html) to overlay reference cities on the globe and confirm projection accuracy.
 
 ---
 
@@ -69,11 +120,19 @@ randall-clock-desktop-background/
 
 ---
 
-## Installation
+## Desktop Background Install
+
+Black Mode displays a black background with a green overlay showing the current time. The clock is viewed from the south pole and uses a 24-hour dial. The time display is calibrated with a fixed offset to ensure correct time alignment regardless of installation time.
 
 ### Quick Install (Recommended)
 
 Run:
+```bash
+./install_blackmode.sh
+```
+
+Or the legacy installer:
+
 ```bash
 ./install.sh
 ```
@@ -82,6 +141,8 @@ This will:
 - Prompt for red dot, location, style, and interval
 - Generate overlays, masks, frames, and red dot images as needed
 - Set up a cron job for background updates
+
+See [Black Mode Installation](#black-mode-installation) below for the recommended Black Mode setup with systemd and cron.
 
 ### Manual Install
 
@@ -193,9 +254,6 @@ height = 960
 - XKCD "Now" clock: [xkcd.com/1335](https://xkcd.com/1335)
 - Explanation: [explainxkcd.com/1335](https://explainxkcd.com/1335)
 - Black globe version and batch image processing: [Fred Weinhaus's ImageMagick scripts](http://www.fmwconcepts.com/imagemagick/index.php)
-
-## Black Mode
-This mode displays a black background with a green overlay showing the current time. The clock is viewed from the south pole and uses a 24-hour dial. The time display is calibrated with a fixed offset to ensure correct time alignment regardless of installation time.
 
 ## Black Mode Installation
 

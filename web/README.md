@@ -1,5 +1,7 @@
 # Randall Clock — Web Deployment
 
+**Live demo:** [hromp.com/clock/](https://hromp.com/clock/)
+
 Serve the XKCD "Now" clock (Black Mode) as a static web page with automatic red-dot placement from the viewer's geolocation.
 
 ## Requirements
