@@ -22,6 +22,15 @@ server {
     root /var/www/randall-clock/web;
     index index.html;
 
+    # Same-origin IP geolocation proxy (required when CSP connect-src blocks third parties).
+    # Adjust the path if the clock is served from a subpath (e.g. /clock/api/geo).
+    location /api/geo {
+        proxy_pass https://ipwho.is/;
+        proxy_set_header Host ipwho.is;
+        proxy_ssl_server_name on;
+        add_header Cache-Control "no-store";
+    }
+
     location / {
         try_files $uri $uri/ =404;
     }

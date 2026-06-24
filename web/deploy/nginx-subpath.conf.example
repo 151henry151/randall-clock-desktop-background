@@ -1,0 +1,24 @@
+# Example nginx locations when the Randall Clock is served from a subpath
+# such as https://example.com/clock/ (as on hromp.com).
+#
+# Include these location blocks inside the main server { } for example.com.
+# Adjust alias paths to match your install.
+
+location /clock/api/geo {
+    proxy_pass https://ipwho.is/;
+    proxy_set_header Host ipwho.is;
+    proxy_ssl_server_name on;
+    add_header Cache-Control "no-store";
+}
+
+location /clock/ {
+    alias /var/www/randall-clock/web/;
+    index index.html;
+    try_files $uri $uri/ /clock/index.html;
+}
+
+location ~* ^/clock/.+\.(png|css|js)$ {
+    alias /var/www/randall-clock/web/;
+    expires 7d;
+    add_header Cache-Control "public, immutable";
+}

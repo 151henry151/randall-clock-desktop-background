@@ -28,6 +28,11 @@
         Require all granted
     </Directory>
 
+    # Same-origin IP geolocation proxy (required when CSP connect-src blocks third parties).
+    # Requires mod_proxy and mod_proxy_http. Adjust path for subpath deploys (e.g. /clock/api/geo).
+    # ProxyPass /api/geo https://ipwho.is/
+    # ProxyPassReverse /api/geo https://ipwho.is/
+
     <IfModule mod_expires.c>
         ExpiresActive On
         ExpiresByType text/css "access plus 7 days"

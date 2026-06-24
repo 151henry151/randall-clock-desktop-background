@@ -137,7 +137,8 @@
     var globeW = globe.width;
     var globeH = globe.height;
     var rotationDeg = calculateRotationDegrees(date);
-    var rotationRad = rotationDeg * Math.PI / 180;
+    // PIL rotate() uses negative angles for clockwise; canvas uses positive for clockwise.
+    var rotationRad = -rotationDeg * Math.PI / 180;
     var pasteX = Math.round((this.canvas.width - globeW) / 2);
     var pasteY = Math.round((this.canvas.height - globeH) / 2) + this.verticalOffset;
 

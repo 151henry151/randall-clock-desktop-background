@@ -26,9 +26,20 @@ The clock resolves the viewer's location in this order:
 
 1. **URL override** — `?lat=44.5&lon=-72.5` (useful for testing)
 2. **Browser geolocation** — prompts for permission; used when granted
-3. **IP geolocation** — fallback when browser geolocation is denied or unavailable (`ipwho.is` or `ipapi.co`)
+3. **IP geolocation** — starts immediately in parallel; used when browser access is denied
 
-The globe renders immediately after assets load. The red dot appears once a location is resolved. If all methods fail, the clock still runs without a red dot.
+The globe and correct time display do **not** depend on geolocation — only the red dot does.
+
+### Content-Security-Policy and IP lookup
+
+Sites with a strict `Content-Security-Policy` (such as `connect-src 'self'`) block browser requests to third-party geo APIs. Configure a **same-origin proxy** so `api/geo` forwards to a provider:
+
+- Root deploy: see `deploy/nginx.conf.example` (`location /api/geo`)
+- Subpath deploy (e.g. `/clock/`): see `deploy/nginx-subpath.conf.example` (`location /clock/api/geo`)
+
+Alternatively, add `https://ipwho.is` and `https://get.geojs.io` to your CSP `connect-src` directive.
+
+The globe renders immediately after assets load. The red dot appears once a location is resolved.
 
 ## Red dot placement
 
@@ -58,6 +69,7 @@ web/
 │   └── validate-projection.html
 ├── deploy/
 │   ├── nginx.conf.example
+│   ├── nginx-subpath.conf.example
 │   └── apache.conf.example
 ├── setup_assets.sh
 └── README.md

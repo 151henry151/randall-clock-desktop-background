@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.5] - 2026-06-24
+
+### Changed
+
+- Fix web globe rotation direction to match PIL/desktop black_mode.py (canvas vs PIL sign convention)
+- Start IP geolocation in parallel with browser prompt; prefer browser when granted, IP when denied
+- Request IP geolocation via same-origin `api/geo` first for CSP-compatible deploys
+- Add nginx subpath proxy example for `/clock/api/geo` deployments
+- Clarify that clock time is correct without geolocation; only the red dot requires location
+
 ## [1.1.4] - 2026-06-24
 
 ### Changed
