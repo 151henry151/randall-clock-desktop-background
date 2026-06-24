@@ -282,6 +282,8 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=%h/.Xauthority
 ExecStart=$SCRIPT_DIR/update_background.sh
 StandardOutput=journal
 StandardError=journal

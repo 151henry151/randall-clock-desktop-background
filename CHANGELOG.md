@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-24
+
+### Changed
+
+- Use `SCRIPT_DIR` in `update_background.sh` instead of hardcoded install paths
+- Auto-detect X display and Xauthority in `update_background.sh` for GDM + i3 sessions
+- Set `DISPLAY` and `XAUTHORITY` in the Black Mode systemd unit environment
+
 ## [1.1.1] - 2026-06-24
 
 ### Changed
