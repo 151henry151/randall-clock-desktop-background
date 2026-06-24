@@ -6,21 +6,11 @@ Serve the XKCD "Now" clock (Black Mode) as a static web page with automatic red-
 
 - A web server (nginx or Apache) serving static files
 - HTTPS in production (browser geolocation requires a secure context)
-- Image assets from a desktop Black Mode install:
-  - `base_globe.png`
-  - `stationary_overlay.png`
+- Image assets (`base_globe.png`, `stationary_overlay.png`) are committed in `web/assets/` for static deployment
 
 ## Quick start
 
-1. **Copy assets** from an existing desktop install:
-
-   ```bash
-   ./web/setup_assets.sh
-   ```
-
-   This copies `src/images/base_globe.png` and `src/images/stationary_overlay.png` into `web/assets/`.
-
-2. **Serve the `web/` directory** with any static file server:
+1. **Serve the `web/` directory** with any static file server:
 
    ```bash
    cd web && python3 -m http.server 8080
@@ -28,7 +18,7 @@ Serve the XKCD "Now" clock (Black Mode) as a static web page with automatic red-
 
    Open `http://localhost:8080/` in a browser.
 
-3. **Configure nginx or Apache** using the example configs in `web/deploy/`.
+2. **Configure nginx or Apache** using the example configs in `web/deploy/`.
 
 ## Geolocation
 

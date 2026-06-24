@@ -1,6 +1,13 @@
-# Generated images
+# Generated images (base globe assets are committed for web deploy and fresh clones)
 *.png
-src/images/
+!web/assets/base_globe.png
+!web/assets/stationary_overlay.png
+!src/images/base_globe.png
+!src/images/stationary_overlay.png
+
+src/images/*
+!src/images/base_globe.png
+!src/images/stationary_overlay.png
 
 # Python
 __pycache__/
