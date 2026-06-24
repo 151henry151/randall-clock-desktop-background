@@ -58,11 +58,12 @@
     var imageData = maskCtx.getImageData(0, 0, width, height);
     var data = imageData.data;
     for (var i = 0; i < data.length; i += 4) {
-      var showOverlay = data[i + 3] === 0 ? 255 : 0;
-      data[i] = showOverlay;
-      data[i + 1] = showOverlay;
-      data[i + 2] = showOverlay;
-      data[i + 3] = 255;
+      var globeAlpha = data[i + 3];
+      var showOverlay = globeAlpha > 0 ? 0 : 255;
+      data[i] = 255;
+      data[i + 1] = 255;
+      data[i + 2] = 255;
+      data[i + 3] = showOverlay;
     }
     maskCtx.putImageData(imageData, 0, 0);
     return maskCanvas;
