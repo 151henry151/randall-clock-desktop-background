@@ -132,6 +132,9 @@
   /**
    * Resolve the best available viewer location.
    *
+   * Prompts for browser geolocation first; if denied or unavailable, falls back
+   * to IP geolocation.
+   *
    * @returns {Promise<{ lat: number, lon: number, source: string, label?: string }>}
    */
   function resolveLocation() {
@@ -140,8 +143,8 @@
       return Promise.resolve(override);
     }
 
-    return lookupByIp().catch(function () {
-      return lookupByBrowser();
+    return lookupByBrowser().catch(function () {
+      return lookupByIp();
     });
   }
 

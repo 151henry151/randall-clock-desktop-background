@@ -25,10 +25,10 @@ Serve the XKCD "Now" clock (Black Mode) as a static web page with automatic red-
 The clock resolves the viewer's location in this order:
 
 1. **URL override** — `?lat=44.5&lon=-72.5` (useful for testing)
-2. **IP geolocation** — client-side lookup via `ipwho.is` or `ipapi.co`
-3. **Browser geolocation** — `navigator.geolocation` if the user grants permission
+2. **Browser geolocation** — prompts for permission; used when granted
+3. **IP geolocation** — fallback when browser geolocation is denied or unavailable (`ipwho.is` or `ipapi.co`)
 
-If all methods fail, the clock still runs but without a red dot. A brief status message appears in the lower-right corner when location is available.
+The globe renders immediately after assets load. The red dot appears once a location is resolved. If all methods fail, the clock still runs without a red dot.
 
 ## Red dot placement
 

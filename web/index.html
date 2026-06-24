@@ -34,11 +34,12 @@
 
       renderer.loadAssets('assets/base_globe.png', 'assets/stationary_overlay.png')
         .then(function () {
+          renderer.start();
           return RandallGeo.resolveLocation();
         })
         .then(function (location) {
           renderer.setLocation(location);
-          renderer.start();
+          renderer.renderFrame(new Date());
         })
         .catch(function (err) {
           if (err && err.message && err.message.indexOf('Failed to load') === 0) {
@@ -46,7 +47,6 @@
             return;
           }
           renderer.clearStatus('Location unavailable — showing clock without red dot');
-          renderer.start();
         });
     })();
   </script>

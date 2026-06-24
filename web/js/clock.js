@@ -42,12 +42,53 @@
     }
   }
 
+  /**
+   * Build inverted globe alpha mask matching black_mode.py overlay_mask.
+   * Overlay is drawn only where the base globe image is transparent.
+   */
+  function createOverlayMaskCanvas(globeImage) {
+    var width = globeImage.naturalWidth || globeImage.width;
+    var height = globeImage.naturalHeight || globeImage.height;
+    var maskCanvas = document.createElement('canvas');
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+    var maskCtx = maskCanvas.getContext('2d');
+
+    maskCtx.drawImage(globeImage, 0, 0);
+    var imageData = maskCtx.getImageData(0, 0, width, height);
+    var data = imageData.data;
+    for (var i = 0; i < data.length; i += 4) {
+      var showOverlay = data[i + 3] === 0 ? 255 : 0;
+      data[i] = showOverlay;
+      data[i + 1] = showOverlay;
+      data[i + 2] = showOverlay;
+      data[i + 3] = 255;
+    }
+    maskCtx.putImageData(imageData, 0, 0);
+    return maskCanvas;
+  }
+
+  function drawOverlayWithMask(ctx, overlayImage, maskCanvas) {
+    var width = ctx.canvas.width;
+    var height = ctx.canvas.height;
+    var tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    var tempCtx = tempCanvas.getContext('2d');
+
+    tempCtx.drawImage(overlayImage, 0, 0);
+    tempCtx.globalCompositeOperation = 'destination-in';
+    tempCtx.drawImage(maskCanvas, 0, 0);
+    ctx.drawImage(tempCanvas, 0, 0);
+  }
+
   function ClockRenderer(options) {
     this.canvas = options.canvas;
     this.ctx = this.canvas.getContext('2d');
     this.statusEl = options.statusEl || null;
     this.globeImage = null;
     this.overlayImage = null;
+    this.overlayMaskCanvas = null;
     this.globeGeometry = null;
     this.location = null;
     this.animationId = null;
@@ -63,6 +104,7 @@
     ]).then(function (images) {
       self.globeImage = images[0];
       self.overlayImage = images[1];
+      self.overlayMaskCanvas = createOverlayMaskCanvas(self.globeImage);
       self.globeGeometry = global.RandallProjection.globeGeometryFromImage(self.globeImage);
       self.canvas.width = self.overlayImage.naturalWidth || self.overlayImage.width;
       self.canvas.height = self.overlayImage.naturalHeight || self.overlayImage.height;
@@ -85,7 +127,7 @@
   };
 
   ClockRenderer.prototype.renderFrame = function (date) {
-    if (!this.globeImage || !this.overlayImage) {
+    if (!this.globeImage || !this.overlayImage || !this.overlayMaskCanvas) {
       return;
     }
 
@@ -97,6 +139,11 @@
     var rotationRad = rotationDeg * Math.PI / 180;
     var pasteX = Math.round((this.canvas.width - globeW) / 2);
     var pasteY = Math.round((this.canvas.height - globeH) / 2) + this.verticalOffset;
+
+    if (globeW === this.canvas.width && globeH === this.canvas.height) {
+      pasteX = 0;
+      pasteY = this.verticalOffset;
+    }
 
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -123,7 +170,7 @@
     ctx.drawImage(globeCanvas, -globeW / 2, -globeH / 2);
     ctx.restore();
 
-    ctx.drawImage(this.overlayImage, 0, 0);
+    drawOverlayWithMask(ctx, this.overlayImage, this.overlayMaskCanvas);
   };
 
   ClockRenderer.prototype.start = function () {
@@ -154,6 +201,7 @@
 
   global.RandallClock = {
     ClockRenderer: ClockRenderer,
-    calculateRotationDegrees: calculateRotationDegrees
+    calculateRotationDegrees: calculateRotationDegrees,
+    createOverlayMaskCanvas: createOverlayMaskCanvas
   };
 })(typeof window !== 'undefined' ? window : this);
