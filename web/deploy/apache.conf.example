@@ -1,0 +1,46 @@
+# Example Apache virtual host for the Randall Clock web deployment.
+#
+# Enable mod_ssl, mod_expires, and mod_deflate as needed. HTTPS is strongly
+# recommended in production because browser geolocation APIs require a secure
+# context.
+
+<VirtualHost *:80>
+    ServerName clock.example.com
+    DocumentRoot /var/www/randall-clock/web
+
+    # Redirect HTTP to HTTPS (uncomment when TLS is configured)
+    # Redirect permanent / https://clock.example.com/
+</VirtualHost>
+
+<VirtualHost *:443>
+    ServerName clock.example.com
+    DocumentRoot /var/www/randall-clock/web
+
+    # SSLEngine on
+    # SSLCertificateFile      /etc/letsencrypt/live/clock.example.com/fullchain.pem
+    # SSLCertificateKeyFile   /etc/letsencrypt/live/clock.example.com/privkey.pem
+
+    DirectoryIndex index.html
+
+    <Directory /var/www/randall-clock/web>
+        Options -Indexes +FollowSymLinks
+        AllowOverride None
+        Require all granted
+    </Directory>
+
+    <IfModule mod_expires.c>
+        ExpiresActive On
+        ExpiresByType text/css "access plus 7 days"
+        ExpiresByType application/javascript "access plus 7 days"
+        ExpiresByType image/png "access plus 7 days"
+        ExpiresByType image/jpeg "access plus 7 days"
+        ExpiresByType text/html "access plus 0 seconds"
+    </IfModule>
+
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/css application/javascript
+    </IfModule>
+
+    ErrorLog ${APACHE_LOG_DIR}/randall-clock-error.log
+    CustomLog ${APACHE_LOG_DIR}/randall-clock-access.log combined
+</VirtualHost>

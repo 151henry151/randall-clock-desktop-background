@@ -1,12 +1,20 @@
 # Randall Clock Desktop Background
 
-**Current Version: 1.0.0**
+**Current Version: 1.1.0**
 
 Change your desktop background using the XKCD "Now" clock or the "dark mode" rendition of it (with green overlay!)
 
 Optionally also put a red dot on the image showing your location.
 
 Special thanks to Randall Munroe and Fred Weinhaus
+
+---
+
+## Web Deployment
+
+Serve the Black Mode clock as a static web page with automatic red-dot placement from the viewer's IP or browser geolocation. See [`web/README.md`](web/README.md) for setup, asset copying, and nginx/Apache configuration examples.
+
+The desktop install is unchanged — the web version lives entirely under `web/`.
 
 ---
 
@@ -23,6 +31,8 @@ Special thanks to Randall Munroe and Fred Weinhaus
 ```
 randall-clock-desktop-background/
 ├── README.md
+├── CHANGELOG.md
+├── web/                          # Static web deployment (see web/README.md)
 ├── install.sh
 ├── config.ini
 ├── requirements.txt

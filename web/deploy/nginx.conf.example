@@ -1,0 +1,43 @@
+# Example nginx site configuration for the Randall Clock web deployment.
+#
+# Copy or include this file from your nginx sites-available directory and adjust
+# paths to match your server layout. HTTPS is strongly recommended in production
+# because browser geolocation APIs require a secure context.
+
+server {
+    listen 80;
+    server_name clock.example.com;
+
+    # Redirect HTTP to HTTPS (uncomment when TLS is configured)
+    # return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name clock.example.com;
+
+    # ssl_certificate     /etc/letsencrypt/live/clock.example.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/clock.example.com/privkey.pem;
+
+    root /var/www/randall-clock/web;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    location ~* \.(png|jpg|jpeg|gif|ico|css|js|svg|woff2?)$ {
+        expires 7d;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location ~* \.html$ {
+        expires -1;
+        add_header Cache-Control "no-cache";
+    }
+
+    gzip on;
+    gzip_types text/css application/javascript text/html;
+    gzip_min_length 256;
+}

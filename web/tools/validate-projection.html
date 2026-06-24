@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Randall Clock — Projection Validation</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #6f6;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+    .canvas-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border: 1px solid #333;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 1.5rem;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 0.4rem 0.6rem;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    th {
+      background: #1a1a1a;
+    }
+    .error {
+      color: #f88;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Projection validation — reference cities on base_globe.png</h1>
+    <p>Confirm each dot lands on the correct continent outline. Uses azimuthal equidistant with lon0 = 8°.</p>
+    <div class="canvas-wrap">
+      <canvas id="map"></canvas>
+    </div>
+    <table id="results">
+      <thead>
+        <tr>
+          <th>City</th>
+          <th>Lat</th>
+          <th>Lon</th>
+          <th>Pixel X</th>
+          <th>Pixel Y</th>
+          <th>Radius</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <script src="../js/projection.js"></script>
+  <script>
+    (function () {
+      var CITIES = [
+        ['Burlington VT', 44.48, -73.21],
+        ['Montpelier VT', 44.26, -72.58],
+        ['London', 51.51, -0.13],
+        ['Los Angeles', 34.05, -118.24],
+        ['Mumbai', 19.08, 72.88],
+        ['Sydney', -33.87, 151.21],
+        ['São Paulo', -23.55, -46.63],
+        ['Tokyo', 35.68, 139.65],
+        ['Cape Town', -33.93, 18.42],
+        ['Singapore', 1.35, 103.82]
+      ];
+
+      var canvas = document.getElementById('map');
+      var ctx = canvas.getContext('2d');
+      var tbody = document.querySelector('#results tbody');
+
+      function drawDot(x, y, label) {
+        var layers = [
+          [12, 0.35],
+          [8, 0.6],
+          [4, 1.0]
+        ];
+        for (var i = 0; i < layers.length; i++) {
+          ctx.beginPath();
+          ctx.arc(x, y, layers[i][0], 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(255, 0, 0, ' + layers[i][1] + ')';
+          ctx.fill();
+        }
+        ctx.fillStyle = '#6f6';
+        ctx.font = '12px sans-serif';
+        ctx.fillText(label, x + 10, y - 6);
+      }
+
+      var img = new Image();
+      img.onload = function () {
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        ctx.drawImage(img, 0, 0);
+
+        var globe = RandallProjection.globeGeometryFromImage(img);
+
+        CITIES.forEach(function (entry) {
+          var name = entry[0];
+          var lat = entry[1];
+          var lon = entry[2];
+          var point = RandallProjection.latLonToGlobePixel(lat, lon, globe);
+          drawDot(point.x, point.y, name);
+
+          var row = document.createElement('tr');
+          row.innerHTML =
+            '<td>' + name + '</td>' +
+            '<td>' + lat.toFixed(2) + '</td>' +
+            '<td>' + lon.toFixed(2) + '</td>' +
+            '<td>' + point.x.toFixed(1) + '</td>' +
+            '<td>' + point.y.toFixed(1) + '</td>' +
+            '<td>' + point.rho.toFixed(1) + '</td>';
+          tbody.appendChild(row);
+        });
+      };
+      img.onerror = function () {
+        tbody.innerHTML = '<tr><td colspan="6" class="error">Could not load ../assets/base_globe.png — run web/setup_assets.sh first.</td></tr>';
+      };
+      img.src = '../assets/base_globe.png';
+    })();
+  </script>
+</body>
+</html>

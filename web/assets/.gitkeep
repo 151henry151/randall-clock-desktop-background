@@ -1,0 +1,2 @@
+# Image assets (base_globe.png, stationary_overlay.png) are copied here by setup_assets.sh.
+# PNG files are gitignored; run ./web/setup_assets.sh after a desktop Black Mode install.

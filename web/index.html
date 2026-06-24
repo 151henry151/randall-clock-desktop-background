@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Randall Clock</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="error-banner" hidden></div>
+  <div id="clock-container">
+    <canvas id="clock-canvas" aria-label="Randall Clock"></canvas>
+  </div>
+  <div id="status-bar" hidden></div>
+
+  <script src="js/projection.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/clock.js"></script>
+  <script>
+    (function () {
+      var canvas = document.getElementById('clock-canvas');
+      var statusEl = document.getElementById('status-bar');
+      var errorEl = document.getElementById('error-banner');
+
+      function showError(message) {
+        errorEl.textContent = message;
+        errorEl.hidden = false;
+      }
+
+      var renderer = new RandallClock.ClockRenderer({
+        canvas: canvas,
+        statusEl: statusEl
+      });
+
+      renderer.loadAssets('assets/base_globe.png', 'assets/stationary_overlay.png')
+        .then(function () {
+          return RandallGeo.resolveLocation();
+        })
+        .then(function (location) {
+          renderer.setLocation(location);
+          renderer.start();
+        })
+        .catch(function (err) {
+          if (err && err.message && err.message.indexOf('Failed to load') === 0) {
+            showError('Clock assets not found. Run web/setup_assets.sh to copy images from the desktop install.');
+            return;
+          }
+          renderer.clearStatus('Location unavailable — showing clock without red dot');
+          renderer.start();
+        });
+    })();
+  </script>
+</body>
+</html>
